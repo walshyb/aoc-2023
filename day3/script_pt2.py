@@ -20,9 +20,6 @@ result = 0
 running_ratios = []
 seen_coords = set()
 
-def is_symbol(char):
-    return not char.isnumeric() and char != '.'
-
 def inbounds(row = 0, col = 0):
     return row >= 0 and row < rows and col >= 0 and col < columns
 
