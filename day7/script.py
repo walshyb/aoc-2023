@@ -17,8 +17,8 @@ values = {
     '9': 9,
     'T': 10,
     'J': 11,
-    'K': 12,
-    'Q': 13,
+    'Q': 12,
+    'K': 13,
     'A': 14,
 }
 
@@ -126,8 +126,10 @@ hands.sort(key=cmp_to_key(compare))
 result = 0
 for index, tup in enumerate(hands):
     bid = tup[1]
-    result += (index + 1) * bid
+    result += ((index + 1) * bid)
+    #print(tup[0], index +1, bid, result)
 
 print(result)
 
 # 253673509 too high
+# 253638586 correct
