@@ -11,6 +11,14 @@ light_to_temp = {}
 temp_to_humidity = {}
 humidity_to_location = {}
 
+soil_to_seed = {}
+fertilizier_to_soil = {}
+water_to_fertilizer = {}
+light_to_water = {}
+temp_to_light = {}
+humidity_to_temp = {}
+location_to_humidity = {}
+
 seeds_raw = lines[0].split(': ')[1].split(' ')
 seeds = [int(seed) for seed in seeds_raw ]
 
@@ -27,7 +35,21 @@ def fetch(dataset, value):
     return destination_range_start + diff
 
 
+def reverse_fetch(dataset, value):
+    result = { dataset[key] for key in dataset if value in key }
+    if not len(result):
+        return value
+
+    result = result.pop()
+    [destination_range_start, source_range_start, range_length] = result
+
+    diff = value - destination_range_start
+
+    return source_range_start + diff
+
+
 usable = None
+reverse = None
 for i in range(2, len(lines)):
     line = lines[i]
     if line == '\n':
@@ -35,38 +57,42 @@ for i in range(2, len(lines)):
 
     if 'seed-to-soil' in line:
         usable = seed_to_soil
+        reverse = soil_to_seed
         continue
 
     if 'soil-to-fertilizer' in line:
         usable = soil_to_fertilizer
+        reverse = fertilizier_to_soil 
         continue
 
     if 'fertilizer-to-water' in line:
         usable = fertilizer_to_water
-        continue
-
-    if 'fertilizer-to-water' in line:
-        usable = fertilizer_to_water
+        reverse = water_to_fertilizer 
         continue
 
     if 'water-to-light' in line:
         usable = water_to_light 
+        reverse = light_to_water 
         continue
 
     if 'light-to-temp' in line:
         usable = light_to_temp 
+        reverse = temp_to_light 
         continue
 
     if 'temperature-to-humidity' in line:
         usable = temp_to_humidity 
+        reverse = humidity_to_temp 
         continue
 
     if 'humidity-to-location' in line:
         usable = humidity_to_location 
+        reverse = location_to_humidity
         continue
 
     [destination_range_start, source_range_start, range_length] = [int(item) for item in line.split(' ')]
     usable[range(source_range_start, source_range_start + range_length)] = (destination_range_start, source_range_start, range_length)
+    reverse[range(destination_range_start, destination_range_start + range_length)] = (destination_range_start, source_range_start, range_length)
 
 
 def run_it(seed):
@@ -87,14 +113,11 @@ def part_1():
         location = run_it(seed)
         locations.append(location)
 
-    print(min(locations))
+    #print(min(locations))
 
     # Result 218513636
 
-#part_1()
-
-
-    
+part_1()
 
 def part_2():
     ranges = []
@@ -103,45 +126,38 @@ def part_2():
     for seed_start, seed_range in zip(seeds[0::2], seeds[1::2]): 
         ranges.append(range(seed_start, seed_start + seed_range))
 
-    for seed_range in ranges:
-        # Binary search!!!
-        # that's the key to it all
-        # i missed the trick in pt 1
-        # but we got it now
 
-        #for seed in seed_range:
-        #    min_location = min(min_location, run_it(seed))
+    def reverse_run_it(location):
+        humidity = reverse_fetch(location_to_humidity, location)
+        temp = reverse_fetch(humidity_to_temp, humidity)
+        light = reverse_fetch(temp_to_light, temp)
+        water = reverse_fetch(light_to_water, light)
+        fertilizer = reverse_fetch(water_to_fertilizer, water)
+        soil = reverse_fetch(fertilizier_to_soil, fertilizer)
+        seed = reverse_fetch(soil_to_seed, soil)
 
-        local_min = run_it(seed_range[0])
-        left_ptr = 0
-        right_ptr = len(seed_range) - 1
-        
-        while left_ptr < right_ptr:
-            mid_ptr = (left_ptr + right_ptr) // 2
-            candidate1 = run_it(seed_range[mid_ptr])
-            candidate2 = run_it(seed_range[mid_ptr + 1])
+        return seed
 
-            #print(seed_range[left_ptr], seed_range[mid_ptr], seed_range[right_ptr])
-            candidate3 = run_it(seed_range[right_ptr])
-            candidate4 = run_it(seed_range[left_ptr])
-            print(candidate4, candidate1, candidate3)
 
-            if candidate1 > candidate2:
-                print('go left')
-                left_ptr = mid_ptr + 1
-            else:
-                print('go right')
-                right_ptr = mid_ptr
-        
-            local_min = min(local_min, candidate1, candidate2, candidate3, candidate4)
+    location = 0
+    lowest_location = float('inf')
+    # Reverse lookup
+    while True:
+        seed = reverse_run_it(location)
 
-        min_location = min(min_location, local_min)
+        if True in { ranges[key] for key in ranges if seed in key }:
+            lowest_location = location
+            break
 
-        break
+        if lowest_location != float('inf'):
+            break
 
-    print(min_location)
+        location += 1
+
+    print(lowest_location)
 
 
 part_2()
 # too high 280278922
 # too high 550136751
+# right answer: 81956384
